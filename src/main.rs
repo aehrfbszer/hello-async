@@ -24,6 +24,7 @@ async fn main() {
 
 // basic handler that responds with a static string
 async fn root() -> &'static str {
+    tracing::info!("root handler called");
     "Hello, World!"
 }
 
