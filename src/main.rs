@@ -4,6 +4,12 @@ use axum::{
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
+use tower::ServiceBuilder;
+use tower_http::{compression::CompressionLayer, decompression::RequestDecompressionLayer};
+
+use crate::user::get_user;
+
+mod user;
 
 #[tokio::main]
 async fn main() {
@@ -14,8 +20,14 @@ async fn main() {
     let app = Router::new()
         // `GET /` goes to `root`
         .route("/", get(root))
+        .route("/users", get(get_user))
         // `POST /users` goes to `create_user`
-        .route("/users", post(create_user));
+        .route("/users", post(create_user))
+        .layer(
+            ServiceBuilder::new()
+                .layer(RequestDecompressionLayer::new())
+                .layer(CompressionLayer::new()),
+        );
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
