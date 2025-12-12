@@ -1,4 +1,4 @@
-use axum::{Json, http::StatusCode};
+use axum::Json;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -7,7 +7,7 @@ pub struct User {
     name: String,
 }
 
-pub async fn get_user() -> (StatusCode, Json<Vec<User>>) {
+pub async fn get_user() -> Json<Vec<User>> {
     let v = (1..=300)
         .map(|id| User {
             id,
@@ -15,5 +15,5 @@ pub async fn get_user() -> (StatusCode, Json<Vec<User>>) {
         })
         .collect();
     tracing::info!("get_user handler called");
-    (StatusCode::OK, Json(v))
+    Json(v)
 }
