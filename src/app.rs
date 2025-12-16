@@ -51,10 +51,14 @@ impl ApplicationHandler<State> for App {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            // If we are not on web we can use pollster to
-            // await the
-            self.state = Some(rt.block_on(State::new(window)).unwrap());
+            let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+            tokio::spawn(async move {
+                let state = State::new(window).await.unwrap();
+                let _ = tx.send(state).await;
+            });
+            if let Some(state) = rx.blocking_recv() {
+                self.state = Some(state);
+            }
         }
 
         #[cfg(target_arch = "wasm32")]
@@ -106,7 +110,17 @@ impl ApplicationHandler<State> for App {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(size) => state.resize(size.width, size.height),
             WindowEvent::RedrawRequested => {
-                state.render();
+                state.update();
+                match state.render() {
+                    Ok(_) => {}
+                    Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                        let size = state.window.inner_size();
+                        state.resize(size.width, size.height);
+                    }
+                    Err(e) => {
+                        tracing::error!(%e, "Unable to render");
+                    }
+                }
             }
             WindowEvent::KeyboardInput {
                 event:
@@ -116,10 +130,7 @@ impl ApplicationHandler<State> for App {
                         ..
                     },
                 ..
-            } => match (code, key_state.is_pressed()) {
-                (KeyCode::Escape, true) => event_loop.exit(),
-                _ => {}
-            },
+            } => state.handle_key(event_loop, code, key_state.is_pressed()),
             _ => {}
         }
     }
