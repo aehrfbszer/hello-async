@@ -10,28 +10,33 @@ use tower_http::{compression::CompressionLayer, decompression::RequestDecompress
 use crate::user::get_user;
 
 mod user;
+mod state;
+mod app;
+mod run;
 
 #[tokio::main]
 async fn main() {
-    // initialize tracing
-    tracing_subscriber::fmt::init();
+    // // initialize tracing
+    // tracing_subscriber::fmt::init();
 
-    // build our application with a route
-    let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(root))
-        .route("/users", get(get_user))
-        // `POST /users` goes to `create_user`
-        .route("/users", post(create_user))
-        .layer(
-            ServiceBuilder::new()
-                .layer(RequestDecompressionLayer::new())
-                .layer(CompressionLayer::new()),
-        );
+    // // build our application with a route
+    // let app = Router::new()
+    //     // `GET /` goes to `root`
+    //     .route("/", get(root))
+    //     .route("/users", get(get_user))
+    //     // `POST /users` goes to `create_user`
+    //     .route("/users", post(create_user))
+    //     .layer(
+    //         ServiceBuilder::new()
+    //             .layer(RequestDecompressionLayer::new())
+    //             .layer(CompressionLayer::new()),
+    //     );
 
-    // run our app with hyper, listening globally on port 3000
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    // // run our app with hyper, listening globally on port 3000
+    // let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    // axum::serve(listener, app).await.unwrap();
+
+    run::run().unwrap();
 }
 
 // basic handler that responds with a static string
