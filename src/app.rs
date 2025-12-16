@@ -51,12 +51,12 @@ impl ApplicationHandler<State> for App {
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+            let (tx, rx) = tokio::sync::oneshot::channel();
             tokio::spawn(async move {
                 let state = State::new(window).await.unwrap();
-                let _ = tx.send(state).await;
+                tx.send(state).unwrap();
             });
-            if let Some(state) = rx.blocking_recv() {
+            if let Ok(state) = rx.blocking_recv() {
                 self.state = Some(state);
             }
         }
